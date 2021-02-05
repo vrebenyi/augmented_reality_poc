@@ -1,4 +1,4 @@
-package com.trax.retailexecution.ar.poc
+package com.trax.retailexecution.ar.poc.helpers
 
 import android.content.Context
 import android.hardware.display.DisplayManager

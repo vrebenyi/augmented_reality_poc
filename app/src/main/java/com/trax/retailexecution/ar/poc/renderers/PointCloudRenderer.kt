@@ -1,9 +1,10 @@
-package com.trax.retailexecution.ar.poc
+package com.trax.retailexecution.ar.poc.renderers
 
 import android.content.Context
 import android.opengl.GLES20
 import android.opengl.Matrix
 import com.google.ar.core.PointCloud
+import com.trax.retailexecution.ar.poc.helpers.ShaderUtil
 import java.io.IOException
 
 class PointCloudRenderer {
@@ -32,7 +33,10 @@ class PointCloudRenderer {
 
     @Throws(IOException::class)
     fun createOnGlThread(context: Context?) {
-        ShaderUtil.checkGLError(TAG, "before create")
+        ShaderUtil.checkGLError(
+            TAG,
+            "before create"
+        )
         val buffers = IntArray(1)
         GLES20.glGenBuffers(1, buffers, 0)
         vbo = buffers[0]
@@ -40,9 +44,24 @@ class PointCloudRenderer {
         vboSize = INITIAL_BUFFER_POINTS * BYTES_PER_POINT
         GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vboSize, null, GLES20.GL_DYNAMIC_DRAW)
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
-        ShaderUtil.checkGLError(TAG, "buffer alloc")
-        val vertexShader = ShaderUtil.loadGLShader(TAG, context!!, GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_NAME)
-        val passthroughShader = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME)
+        ShaderUtil.checkGLError(
+            TAG,
+            "buffer alloc"
+        )
+        val vertexShader =
+            ShaderUtil.loadGLShader(
+                TAG,
+                context!!,
+                GLES20.GL_VERTEX_SHADER,
+                VERTEX_SHADER_NAME
+            )
+        val passthroughShader =
+            ShaderUtil.loadGLShader(
+                TAG,
+                context,
+                GLES20.GL_FRAGMENT_SHADER,
+                FRAGMENT_SHADER_NAME
+            )
         programName = GLES20.glCreateProgram()
         GLES20.glAttachShader(programName, vertexShader)
         GLES20.glAttachShader(programName, passthroughShader)
@@ -53,14 +72,20 @@ class PointCloudRenderer {
         colorUniform = GLES20.glGetUniformLocation(programName, "u_Color")
         modelViewProjectionUniform = GLES20.glGetUniformLocation(programName, "u_ModelViewProjection")
         pointSizeUniform = GLES20.glGetUniformLocation(programName, "u_PointSize")
-        ShaderUtil.checkGLError(TAG, "program  params")
+        ShaderUtil.checkGLError(
+            TAG,
+            "program  params"
+        )
     }
 
     fun update(cloud: PointCloud) {
         if (cloud.timestamp == lastTimestamp) {
             return
         }
-        ShaderUtil.checkGLError(TAG, "before update")
+        ShaderUtil.checkGLError(
+            TAG,
+            "before update"
+        )
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo)
         lastTimestamp = cloud.timestamp
 
@@ -74,13 +99,19 @@ class PointCloudRenderer {
         GLES20.glBufferSubData(
                 GLES20.GL_ARRAY_BUFFER, 0, numPoints * BYTES_PER_POINT, cloud.points)
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
-        ShaderUtil.checkGLError(TAG, "after update")
+        ShaderUtil.checkGLError(
+            TAG,
+            "after update"
+        )
     }
 
     fun draw(cameraView: FloatArray?, cameraPerspective: FloatArray?) {
         val modelViewProjection = FloatArray(16)
         Matrix.multiplyMM(modelViewProjection, 0, cameraPerspective, 0, cameraView, 0)
-        ShaderUtil.checkGLError(TAG, "Before draw")
+        ShaderUtil.checkGLError(
+            TAG,
+            "Before draw"
+        )
         GLES20.glUseProgram(programName)
         GLES20.glEnableVertexAttribArray(positionAttribute)
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo)

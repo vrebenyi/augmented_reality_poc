@@ -1,4 +1,4 @@
-package com.trax.retailexecution.ar.poc
+package com.trax.retailexecution.ar.poc.helpers
 
 import android.content.Context
 import android.opengl.GLES20
@@ -11,7 +11,11 @@ import java.util.*
 object ShaderUtil {
     @Throws(IOException::class)
     fun loadGLShader(tag: String?, context: Context, type: Int, filename: String, defineValuesMap: Map<String, Int>): Int {
-        var code = readShaderFileFromAssets(context, filename)
+        var code =
+            readShaderFileFromAssets(
+                context,
+                filename
+            )
 
         var defines = ""
         for ((key, value) in defineValuesMap) {
@@ -41,7 +45,13 @@ object ShaderUtil {
     @Throws(IOException::class)
     fun loadGLShader(tag: String?, context: Context, type: Int, filename: String): Int {
         val emptyDefineValuesMap: Map<String, Int> = TreeMap()
-        return loadGLShader(tag, context, type, filename, emptyDefineValuesMap)
+        return loadGLShader(
+            tag,
+            context,
+            type,
+            filename,
+            emptyDefineValuesMap
+        )
     }
 
     fun checkGLError(tag: String?, label: String) {

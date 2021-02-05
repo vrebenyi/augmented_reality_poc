@@ -1,10 +1,11 @@
-package com.trax.retailexecution.ar.poc
+package com.trax.retailexecution.ar.poc.renderers
 
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.opengl.GLES20
 import android.opengl.GLUtils
 import android.opengl.Matrix
+import com.trax.retailexecution.ar.poc.helpers.ShaderUtil
 import de.javagl.obj.Obj
 import de.javagl.obj.ObjData
 import de.javagl.obj.ObjReader
@@ -87,7 +88,10 @@ class ObjectRenderer {
         GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
         textureBitmap.recycle()
-        ShaderUtil.checkGLError(TAG, "Texture loading")
+        ShaderUtil.checkGLError(
+            TAG,
+            "Texture loading"
+        )
 
         val objInputStream = context.assets.open(objAssetName!!)
         var obj: Obj = ObjReader.read(objInputStream)
@@ -124,7 +128,10 @@ class ObjectRenderer {
         indexCount = indices.limit()
         GLES20.glBufferData(GLES20.GL_ELEMENT_ARRAY_BUFFER, 2 * indexCount, indices, GLES20.GL_STATIC_DRAW)
         GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, 0)
-        ShaderUtil.checkGLError(TAG, "OBJ buffer load")
+        ShaderUtil.checkGLError(
+            TAG,
+            "OBJ buffer load"
+        )
         Matrix.setIdentityM(modelMatrix, 0)
     }
 
@@ -132,14 +139,30 @@ class ObjectRenderer {
     private fun compileAndLoadShaderProgram(context: Context) {
         val defineValuesMap: MutableMap<String, Int> = TreeMap()
         defineValuesMap[USE_DEPTH_FOR_OCCLUSION_SHADER_FLAG] = if (useDepthForOcclusion) 1 else 0
-        val vertexShader = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_NAME)
-        val fragmentShader = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME, defineValuesMap)
+        val vertexShader =
+            ShaderUtil.loadGLShader(
+                TAG,
+                context,
+                GLES20.GL_VERTEX_SHADER,
+                VERTEX_SHADER_NAME
+            )
+        val fragmentShader =
+            ShaderUtil.loadGLShader(
+                TAG,
+                context,
+                GLES20.GL_FRAGMENT_SHADER,
+                FRAGMENT_SHADER_NAME,
+                defineValuesMap
+            )
         program = GLES20.glCreateProgram()
         GLES20.glAttachShader(program, vertexShader)
         GLES20.glAttachShader(program, fragmentShader)
         GLES20.glLinkProgram(program)
         GLES20.glUseProgram(program)
-        ShaderUtil.checkGLError(TAG, "Program creation")
+        ShaderUtil.checkGLError(
+            TAG,
+            "Program creation"
+        )
         modelViewUniform = GLES20.glGetUniformLocation(program, "u_ModelView")
         modelViewProjectionUniform = GLES20.glGetUniformLocation(program, "u_ModelViewProjection")
         positionAttribute = GLES20.glGetAttribLocation(program, "a_Position")
@@ -156,7 +179,10 @@ class ObjectRenderer {
             depthUvTransformUniform = GLES20.glGetUniformLocation(program, "u_DepthUvTransform")
             depthAspectRatioUniform = GLES20.glGetUniformLocation(program, "u_DepthAspectRatio")
         }
-        ShaderUtil.checkGLError(TAG, "Program parameters")
+        ShaderUtil.checkGLError(
+            TAG,
+            "Program parameters"
+        )
     }
 
     fun updateModelMatrix(modelMatrix: FloatArray?, scaleFactor: Float) {
@@ -173,7 +199,10 @@ class ObjectRenderer {
             cameraPerspective: FloatArray?,
             colorCorrectionRgba: FloatArray?,
             objColor: FloatArray?) {
-        ShaderUtil.checkGLError(TAG, "Before draw")
+        ShaderUtil.checkGLError(
+            TAG,
+            "Before draw"
+        )
 
         Matrix.multiplyMM(modelViewMatrix, 0, cameraView, 0, modelMatrix, 0)
         Matrix.multiplyMM(modelViewProjectionMatrix, 0, cameraPerspective, 0, modelViewMatrix, 0)
@@ -240,7 +269,10 @@ class ObjectRenderer {
         GLES20.glDisableVertexAttribArray(normalAttribute)
         GLES20.glDisableVertexAttribArray(texCoordAttribute)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
-        ShaderUtil.checkGLError(TAG, "After draw")
+        ShaderUtil.checkGLError(
+            TAG,
+            "After draw"
+        )
     }
 
     private fun normalizeVec3(v: FloatArray) {

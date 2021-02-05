@@ -1,10 +1,11 @@
-package com.trax.retailexecution.ar.poc
+package com.trax.retailexecution.ar.poc.renderers
 
 import android.content.Context
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import com.google.ar.core.Coordinates2d
 import com.google.ar.core.Frame
+import com.trax.retailexecution.ar.poc.helpers.ShaderUtil
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -51,8 +52,20 @@ class BackgroundRenderer {
         quadTexCoords = bbTexCoordsTransformed.asFloatBuffer()
 
         run {
-            val vertexShader: Int = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_VERTEX_SHADER, CAMERA_VERTEX_SHADER_NAME)
-            val fragmentShader: Int = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_FRAGMENT_SHADER, CAMERA_FRAGMENT_SHADER_NAME)
+            val vertexShader: Int =
+                ShaderUtil.loadGLShader(
+                    TAG,
+                    context,
+                    GLES20.GL_VERTEX_SHADER,
+                    CAMERA_VERTEX_SHADER_NAME
+                )
+            val fragmentShader: Int =
+                ShaderUtil.loadGLShader(
+                    TAG,
+                    context,
+                    GLES20.GL_FRAGMENT_SHADER,
+                    CAMERA_FRAGMENT_SHADER_NAME
+                )
             cameraProgram = GLES20.glCreateProgram()
             GLES20.glAttachShader(cameraProgram, vertexShader)
             GLES20.glAttachShader(cameraProgram, fragmentShader)
@@ -60,14 +73,32 @@ class BackgroundRenderer {
             GLES20.glUseProgram(cameraProgram)
             cameraPositionAttrib = GLES20.glGetAttribLocation(cameraProgram, "a_Position")
             cameraTexCoordAttrib = GLES20.glGetAttribLocation(cameraProgram, "a_TexCoord")
-            ShaderUtil.checkGLError(TAG, "Program creation")
+            ShaderUtil.checkGLError(
+                TAG,
+                "Program creation"
+            )
             cameraTextureUniform = GLES20.glGetUniformLocation(cameraProgram, "sTexture")
-            ShaderUtil.checkGLError(TAG, "Program parameters")
+            ShaderUtil.checkGLError(
+                TAG,
+                "Program parameters"
+            )
         }
 
         run {
-            val vertexShader: Int = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_VERTEX_SHADER, DEPTH_VISUALIZER_VERTEX_SHADER_NAME)
-            val fragmentShader: Int = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_FRAGMENT_SHADER, DEPTH_VISUALIZER_FRAGMENT_SHADER_NAME)
+            val vertexShader: Int =
+                ShaderUtil.loadGLShader(
+                    TAG,
+                    context,
+                    GLES20.GL_VERTEX_SHADER,
+                    DEPTH_VISUALIZER_VERTEX_SHADER_NAME
+                )
+            val fragmentShader: Int =
+                ShaderUtil.loadGLShader(
+                    TAG,
+                    context,
+                    GLES20.GL_FRAGMENT_SHADER,
+                    DEPTH_VISUALIZER_FRAGMENT_SHADER_NAME
+                )
             depthProgram = GLES20.glCreateProgram()
             GLES20.glAttachShader(depthProgram, vertexShader)
             GLES20.glAttachShader(depthProgram, fragmentShader)
@@ -75,9 +106,15 @@ class BackgroundRenderer {
             GLES20.glUseProgram(depthProgram)
             depthPositionAttrib = GLES20.glGetAttribLocation(depthProgram, "a_Position")
             depthTexCoordAttrib = GLES20.glGetAttribLocation(depthProgram, "a_TexCoord")
-            ShaderUtil.checkGLError(TAG, "Program creation")
+            ShaderUtil.checkGLError(
+                TAG,
+                "Program creation"
+            )
             depthTextureUniform = GLES20.glGetUniformLocation(depthProgram, "u_DepthTexture")
-            ShaderUtil.checkGLError(TAG, "Program parameters")
+            ShaderUtil.checkGLError(
+                TAG,
+                "Program parameters"
+            )
         }
         this.depthTextureId = depthTextureId
     }
@@ -110,8 +147,10 @@ class BackgroundRenderer {
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
         GLES20.glUseProgram(cameraProgram)
         GLES20.glUniform1i(cameraTextureUniform, 0)
-        GLES20.glVertexAttribPointer(cameraPositionAttrib, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, quadCoords)
-        GLES20.glVertexAttribPointer(cameraTexCoordAttrib, TEXCOORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, quadTexCoords)
+        GLES20.glVertexAttribPointer(cameraPositionAttrib,
+            COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, quadCoords)
+        GLES20.glVertexAttribPointer(cameraTexCoordAttrib,
+            TEXCOORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, quadTexCoords)
         GLES20.glEnableVertexAttribArray(cameraPositionAttrib)
         GLES20.glEnableVertexAttribArray(cameraTexCoordAttrib)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
@@ -119,7 +158,10 @@ class BackgroundRenderer {
         GLES20.glDisableVertexAttribArray(cameraTexCoordAttrib)
         GLES20.glDepthMask(true)
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
-        ShaderUtil.checkGLError(TAG, "BackgroundRendererDraw")
+        ShaderUtil.checkGLError(
+            TAG,
+            "BackgroundRendererDraw"
+        )
     }
 
     companion object {

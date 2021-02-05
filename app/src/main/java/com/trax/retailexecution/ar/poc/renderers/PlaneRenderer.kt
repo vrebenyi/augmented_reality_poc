@@ -1,4 +1,4 @@
-package com.trax.retailexecution.ar.poc
+package com.trax.retailexecution.ar.poc.renderers
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -8,6 +8,7 @@ import android.opengl.Matrix
 import com.google.ar.core.Plane
 import com.google.ar.core.Pose
 import com.google.ar.core.TrackingState
+import com.trax.retailexecution.ar.poc.helpers.ShaderUtil
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -69,14 +70,29 @@ class PlaneRenderer {
 
     @Throws(IOException::class)
     fun createOnGlThread(context: Context, gridDistanceTextureName: String?) {
-        val vertexShader = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_NAME)
-        val passthroughShader = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME)
+        val vertexShader =
+            ShaderUtil.loadGLShader(
+                TAG,
+                context,
+                GLES20.GL_VERTEX_SHADER,
+                VERTEX_SHADER_NAME
+            )
+        val passthroughShader =
+            ShaderUtil.loadGLShader(
+                TAG,
+                context,
+                GLES20.GL_FRAGMENT_SHADER,
+                FRAGMENT_SHADER_NAME
+            )
         planeProgram = GLES20.glCreateProgram()
         GLES20.glAttachShader(planeProgram, vertexShader)
         GLES20.glAttachShader(planeProgram, passthroughShader)
         GLES20.glLinkProgram(planeProgram)
         GLES20.glUseProgram(planeProgram)
-        ShaderUtil.checkGLError(TAG, "Program creation")
+        ShaderUtil.checkGLError(
+            TAG,
+            "Program creation"
+        )
 
         val textureBitmap = BitmapFactory.decodeStream(context.assets.open(gridDistanceTextureName!!))
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
@@ -87,7 +103,10 @@ class PlaneRenderer {
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmap, 0)
         GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
-        ShaderUtil.checkGLError(TAG, "Texture loading")
+        ShaderUtil.checkGLError(
+            TAG,
+            "Texture loading"
+        )
         planeXZPositionAlphaAttribute = GLES20.glGetAttribLocation(planeProgram, "a_XZPositionAlpha")
         planeModelUniform = GLES20.glGetUniformLocation(planeProgram, "u_Model")
         planeNormalUniform = GLES20.glGetUniformLocation(planeProgram, "u_Normal")
@@ -95,7 +114,10 @@ class PlaneRenderer {
         textureUniform = GLES20.glGetUniformLocation(planeProgram, "u_Texture")
         gridControlUniform = GLES20.glGetUniformLocation(planeProgram, "u_gridControl")
         planeUvMatrixUniform = GLES20.glGetUniformLocation(planeProgram, "u_PlaneUvMatrix")
-        ShaderUtil.checkGLError(TAG, "Program parameters")
+        ShaderUtil.checkGLError(
+            TAG,
+            "Program parameters"
+        )
     }
 
     private fun updatePlaneParameters(planeMatrix: FloatArray, extentX: Float, extentZ: Float, boundary: FloatBuffer?) {
@@ -182,7 +204,10 @@ class PlaneRenderer {
         GLES20.glUniformMatrix4fv(planeModelViewProjectionUniform, 1, false, modelViewProjectionMatrix, 0)
         indexBuffer.rewind()
         GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, indexBuffer.limit(), GLES20.GL_UNSIGNED_SHORT, indexBuffer)
-        ShaderUtil.checkGLError(TAG, "Drawing plane")
+        ShaderUtil.checkGLError(
+            TAG,
+            "Drawing plane"
+        )
     }
 
     internal class SortablePlane(val distance: Float, val plane: Plane)
@@ -197,7 +222,12 @@ class PlaneRenderer {
             if (distance < 0) { // Plane is back-facing.
                 continue
             }
-            sortedPlanes.add(SortablePlane(distance, plane))
+            sortedPlanes.add(
+                SortablePlane(
+                    distance,
+                    plane
+                )
+            )
         }
         sortedPlanes.sortWith(Comparator { a, b -> b.distance.compareTo(a.distance) })
         val cameraView = FloatArray(16)
@@ -212,7 +242,10 @@ class PlaneRenderer {
         GLES20.glUniform1i(textureUniform, 0)
         GLES20.glUniform4fv(gridControlUniform, 1, GRID_CONTROL, 0)
         GLES20.glEnableVertexAttribArray(planeXZPositionAlphaAttribute)
-        ShaderUtil.checkGLError(TAG, "Setting up to draw planes")
+        ShaderUtil.checkGLError(
+            TAG,
+            "Setting up to draw planes"
+        )
         for (sortedPlane in sortedPlanes) {
             val plane = sortedPlane.plane
             val planeMatrix = FloatArray(16)
@@ -242,7 +275,10 @@ class PlaneRenderer {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
         GLES20.glDisable(GLES20.GL_BLEND)
         GLES20.glDepthMask(true)
-        ShaderUtil.checkGLError(TAG, "Cleaning up after drawing planes")
+        ShaderUtil.checkGLError(
+            TAG,
+            "Cleaning up after drawing planes"
+        )
     }
 
     fun calculateDistanceToPlane(planePose: Pose, cameraPose: Pose): Float {

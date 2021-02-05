@@ -1,7 +1,8 @@
-package com.trax.retailexecution.ar.poc
+package com.trax.retailexecution.ar.poc.helpers
 
 import android.view.WindowManager
 import com.google.ar.core.TrackingState
+import com.trax.retailexecution.ar.poc.MainActivity
 
 class TrackingStateHelper(mainActivity: MainActivity) {
     private var activity = mainActivity

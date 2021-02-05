@@ -32,6 +32,13 @@ import com.google.ar.core.ArCoreApk.Availability
 import com.google.ar.core.ArCoreApk.InstallStatus
 import com.google.ar.core.exceptions.CameraNotAvailableException
 import com.google.ar.core.exceptions.UnavailableException
+import com.trax.retailexecution.ar.poc.helpers.DisplayRotationHelper
+import com.trax.retailexecution.ar.poc.helpers.TapHelper
+import com.trax.retailexecution.ar.poc.helpers.TrackingStateHelper
+import com.trax.retailexecution.ar.poc.renderers.BackgroundRenderer
+import com.trax.retailexecution.ar.poc.renderers.ObjectRenderer
+import com.trax.retailexecution.ar.poc.renderers.PlaneRenderer
+import com.trax.retailexecution.ar.poc.renderers.PointCloudRenderer
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -64,10 +71,14 @@ class MainActivity : AppCompatActivity(),
     private var captureSessionChangesPossible = true
     private var isGlAttached = false
 
-    private val backgroundRenderer = BackgroundRenderer()
-    private val pointCloudRenderer = PointCloudRenderer()
-    private val planeRenderer = PlaneRenderer()
-    private val virtualObject = ObjectRenderer()
+    private val backgroundRenderer =
+        BackgroundRenderer()
+    private val pointCloudRenderer =
+        PointCloudRenderer()
+    private val planeRenderer =
+        PlaneRenderer()
+    private val virtualObject =
+        ObjectRenderer()
 
     private val anchors: ArrayList<ColoredAnchor> = ArrayList()
     private class ColoredAnchor(val anchor: Anchor, val color: FloatArray)
@@ -165,8 +176,10 @@ class MainActivity : AppCompatActivity(),
         surfaceView?.setRenderer(this)
         surfaceView?.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
 
-        displayRotationHelper = DisplayRotationHelper(this)
-        trackingStateHelper = TrackingStateHelper(this)
+        displayRotationHelper =
+            DisplayRotationHelper(this)
+        trackingStateHelper =
+            TrackingStateHelper(this)
         tapHelper = TapHelper(this)
         surfaceView?.setOnTouchListener(tapHelper)
 

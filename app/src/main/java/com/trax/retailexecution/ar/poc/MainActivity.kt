@@ -669,6 +669,17 @@ class MainActivity : AppCompatActivity(),
                             "CameraOrientedPoseY: ${cameraOrientedPose.ty()}, " +
                             "CameraOrientedPoseZ: ${cameraOrientedPose.tz()}, " +
                             "Rotation: ${cameraOrientedPose.qx()} - ${cameraOrientedPose.qy()} - ${cameraOrientedPose.qz()} - ${cameraOrientedPose.qw()}")
+
+
+            // For checking the result:
+            // Puts and object in front of the camera (center of the screen) 1m away
+            // The extractTranslation() results that the anchor is oriented based on the device orientation instead of the camera orientation.
+//            if (it.camera.trackingState == TrackingState.TRACKING) {
+//                var newAnchor = sharedSession?.createAnchor(cameraPose.compose(Pose.makeTranslation(0f, 0f, -1f)).extractTranslation())
+//                newAnchor?.let { anchor ->
+//                    anchors.add(ColoredAnchor(anchor, floatArrayOf(209.0f, 91.0f, 23.0f, 255.0f)))
+//                }
+//            }
         }
     }
 

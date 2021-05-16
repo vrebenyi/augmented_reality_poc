@@ -18,6 +18,7 @@ import android.renderscript.Allocation
 import android.renderscript.Element
 import android.renderscript.RenderScript
 import android.renderscript.ScriptIntrinsicYuvToRGB
+import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
 import android.view.MotionEvent
@@ -270,6 +271,7 @@ class MainActivity : AppCompatActivity(),
             shouldTakePicture = false
             processImageAndShowThumbnail(image)
             getCameraPose()
+            getPhotoEdgesOnPlane()
             getPointCloudPoints()
         }
 
@@ -674,12 +676,92 @@ class MainActivity : AppCompatActivity(),
             // For checking the result:
             // Puts and object in front of the camera (center of the screen) 1m away
             // The extractTranslation() results that the anchor is oriented based on the device orientation instead of the camera orientation.
-//            if (it.camera.trackingState == TrackingState.TRACKING) {
-//                var newAnchor = sharedSession?.createAnchor(cameraPose.compose(Pose.makeTranslation(0f, 0f, -1f)).extractTranslation())
-//                newAnchor?.let { anchor ->
-//                    anchors.add(ColoredAnchor(anchor, floatArrayOf(209.0f, 91.0f, 23.0f, 255.0f)))
-//                }
-//            }
+            if (it.camera.trackingState == TrackingState.TRACKING) {
+                var newAnchor = sharedSession?.createAnchor(cameraPose.compose(Pose.makeTranslation(0f, 0f, -1f)).extractTranslation())
+                newAnchor?.let { anchor ->
+                    anchors.add(ColoredAnchor(anchor, floatArrayOf(209.0f, 91.0f, 23.0f, 255.0f)))
+                }
+            }
+        }
+    }
+
+    private fun getPhotoEdgesOnPlane() {
+        frame?.let {
+            val displayMetrics = DisplayMetrics()
+            windowManager.defaultDisplay.getMetrics(displayMetrics)
+            val screenHeight = displayMetrics.heightPixels
+            val screenWidth = displayMetrics.widthPixels
+            for (hit in it.hitTest(0f, 0f)) {
+                val trackable = hit.trackable
+                // Could add additional condition: && planeRenderer.calculateDistanceToPlane(hit.hitPose, camera.pose).
+                if ((trackable is Plane && trackable.isPoseInPolygon(hit.hitPose))) {
+                    val upperLeftPose = hit.hitPose
+                    Log.i(TAG,
+                            "UpperLeftCornerPoseX: ${upperLeftPose.tx()}, " +
+                                    "UpperLeftCornerPoseY: ${upperLeftPose.ty()}, " +
+                                    "UpperLeftCornerPoseZ: ${upperLeftPose.tz()}, " +
+                                    "Rotation: ${upperLeftPose.qx()} - ${upperLeftPose.qy()} - ${upperLeftPose.qz()} - ${upperLeftPose.qw()}")
+
+                    // For checking the result:
+                    // Puts and object to the upper left corner.
+                    anchors.add(ColoredAnchor(hit.createAnchor(), floatArrayOf(14.0f, 57.0f, 230.0f, 255.0f)))
+                    break
+                }
+            }
+
+            for (hit in it.hitTest(screenWidth.toFloat(), 0f)) {
+                val trackable = hit.trackable
+                // Could add additional condition: && planeRenderer.calculateDistanceToPlane(hit.hitPose, camera.pose).
+                if ((trackable is Plane && trackable.isPoseInPolygon(hit.hitPose))) {
+                    val upperRightPose = hit.hitPose
+                    Log.i(TAG,
+                            "UpperRightCornerPoseX: ${upperRightPose.tx()}, " +
+                                    "UpperRightCornerPoseY: ${upperRightPose.ty()}, " +
+                                    "UpperRightCornerPoseZ: ${upperRightPose.tz()}, " +
+                                    "Rotation: ${upperRightPose.qx()} - ${upperRightPose.qy()} - ${upperRightPose.qz()} - ${upperRightPose.qw()}")
+
+                    // For checking the result:
+                    // Puts and object to the upper right corner.
+                    anchors.add(ColoredAnchor(hit.createAnchor(), floatArrayOf(14.0f, 57.0f, 230.0f, 255.0f)))
+                    break
+                }
+            }
+
+            for (hit in it.hitTest(0f, screenHeight.toFloat())) {
+                val trackable = hit.trackable
+                // Could add additional condition: && planeRenderer.calculateDistanceToPlane(hit.hitPose, camera.pose).
+                if ((trackable is Plane && trackable.isPoseInPolygon(hit.hitPose))) {
+                    val lowerLeftPose = hit.hitPose
+                    Log.i(TAG,
+                            "LowerLeftCornerPoseX: ${lowerLeftPose.tx()}, " +
+                                    "LowerUpperLeftCornerPoseY: ${lowerLeftPose.ty()}, " +
+                                    "LowerUpperLeftCornerPoseZ: ${lowerLeftPose.tz()}, " +
+                                    "Rotation: ${lowerLeftPose.qx()} - ${lowerLeftPose.qy()} - ${lowerLeftPose.qz()} - ${lowerLeftPose.qw()}")
+
+                    // For checking the result:
+                    // Puts and object to the lower left corner.
+                    anchors.add(ColoredAnchor(hit.createAnchor(), floatArrayOf(14.0f, 57.0f, 230.0f, 255.0f)))
+                    break
+                }
+            }
+
+            for (hit in it.hitTest(screenWidth.toFloat(), screenHeight.toFloat())) {
+                val trackable = hit.trackable
+                // Could add additional condition: && planeRenderer.calculateDistanceToPlane(hit.hitPose, camera.pose).
+                if ((trackable is Plane && trackable.isPoseInPolygon(hit.hitPose))) {
+                    val lowerRightPose = hit.hitPose
+                    Log.i(TAG,
+                            "LowerRightCornerPoseX: ${lowerRightPose.tx()}, " +
+                                    "LowerRightCornerPoseY: ${lowerRightPose.ty()}, " +
+                                    "LowerRightCornerPoseZ: ${lowerRightPose.tz()}, " +
+                                    "Rotation: ${lowerRightPose.qx()} - ${lowerRightPose.qy()} - ${lowerRightPose.qz()} - ${lowerRightPose.qw()}")
+
+                    // For checking the result:
+                    // Puts and object to the lower right corner.
+                    anchors.add(ColoredAnchor(hit.createAnchor(), floatArrayOf(14.0f, 57.0f, 230.0f, 255.0f)))
+                    break
+                }
+            }
         }
     }
 

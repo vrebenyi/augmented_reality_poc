@@ -53,6 +53,8 @@ class MainActivity : AppCompatActivity(),
     GLSurfaceView.Renderer,
     ImageReader.OnImageAvailableListener {
 
+    private var TAG = "ARPOC"
+
     private var thumbnailView: ImageView? = null
     private var surfaceView: GLSurfaceView? = null
     private var cameraDevice: CameraDevice? = null
@@ -102,6 +104,8 @@ class MainActivity : AppCompatActivity(),
 
     private var latestImageFile: File? = null
     private var latestImageFilePath: String? = null
+
+    private var frame: Frame? = null
 
     // region Callbacks
 
@@ -265,6 +269,8 @@ class MainActivity : AppCompatActivity(),
         if (shouldTakePicture) {
             shouldTakePicture = false
             processImageAndShowThumbnail(image)
+            getCameraPose()
+            getPointCloudPoints()
         }
 
         image.close()
@@ -285,7 +291,7 @@ class MainActivity : AppCompatActivity(),
             try {
                 sharedSession = Session(this, EnumSet.of(Session.Feature.SHARED_CAMERA))
             } catch (e: UnavailableException) {
-                Log.e("POC", e.toString())
+                Log.e(TAG, e.toString())
                 return
             }
 
@@ -410,45 +416,47 @@ class MainActivity : AppCompatActivity(),
             return
         }
 
-        val frame = sharedSession!!.update()
-        val camera = frame.camera
+        frame = sharedSession!!.update()
+        frame?.let {
+            val camera = it.camera
 
-        isGlAttached = true
+            isGlAttached = true
 
-        handleTap(frame, camera)
+            handleTap(it, camera)
 
-        backgroundRenderer.draw(frame)
-        trackingStateHelper?.updateKeepScreenOnFlag(camera.trackingState)
+            backgroundRenderer.draw(it)
+            trackingStateHelper?.updateKeepScreenOnFlag(camera.trackingState)
 
-        if (camera.trackingState == TrackingState.PAUSED) {
-            return
-        }
-
-        val projmtx = FloatArray(16)
-        camera.getProjectionMatrix(projmtx, 0, 0.1f, 100.0f)
-
-        val viewmtx = FloatArray(16)
-        camera.getViewMatrix(viewmtx, 0)
-
-        val colorCorrectionRgba = FloatArray(4)
-        frame.lightEstimate.getColorCorrection(colorCorrectionRgba, 0)
-        frame.acquirePointCloud().use { pointCloud ->
-            pointCloudRenderer.update(pointCloud)
-            pointCloudRenderer.draw(viewmtx, projmtx)
-        }
-
-        planeRenderer.drawPlanes(sharedSession!!.getAllTrackables(Plane::class.java), camera.displayOrientedPose, projmtx)
-
-        val scaleFactor = 1.0f
-        for (coloredAnchor in anchors) {
-            if (coloredAnchor.anchor.getTrackingState() != TrackingState.TRACKING) {
-                continue
+            if (camera.trackingState == TrackingState.PAUSED) {
+                return
             }
 
-            coloredAnchor.anchor.pose.toMatrix(anchorMatrix, 0)
+            val projmtx = FloatArray(16)
+            camera.getProjectionMatrix(projmtx, 0, 0.1f, 100.0f)
 
-            virtualObject.updateModelMatrix(anchorMatrix, scaleFactor)
-            virtualObject.draw(viewmtx, projmtx, colorCorrectionRgba, coloredAnchor.color)
+            val viewmtx = FloatArray(16)
+            camera.getViewMatrix(viewmtx, 0)
+
+            val colorCorrectionRgba = FloatArray(4)
+            it.lightEstimate.getColorCorrection(colorCorrectionRgba, 0)
+            it.acquirePointCloud()?.use { it ->
+                pointCloudRenderer.update(it)
+                pointCloudRenderer.draw(viewmtx, projmtx)
+            }
+
+            planeRenderer.drawPlanes(sharedSession!!.getAllTrackables(Plane::class.java), camera.displayOrientedPose, projmtx)
+
+            val scaleFactor = 1.0f
+            for (coloredAnchor in anchors) {
+                if (coloredAnchor.anchor.getTrackingState() != TrackingState.TRACKING) {
+                    continue
+                }
+
+                coloredAnchor.anchor.pose.toMatrix(anchorMatrix, 0)
+
+                virtualObject.updateModelMatrix(anchorMatrix, scaleFactor)
+                virtualObject.draw(viewmtx, projmtx, colorCorrectionRgba, coloredAnchor.color)
+            }
         }
     }
 
@@ -499,7 +507,7 @@ class MainActivity : AppCompatActivity(),
         if (!galleryFolder?.exists()!!) {
             val wasCreated: Boolean = galleryFolder?.mkdirs() ?: false
             if (!wasCreated) {
-                Log.e("CapturedImages", "Failed to create directory")
+                Log.e(TAG, "Failed to create directory")
             }
         }
     }
@@ -641,6 +649,43 @@ class MainActivity : AppCompatActivity(),
 
                     anchors.add(ColoredAnchor(hit.createAnchor(), objColor))
                     break
+                }
+            }
+        }
+    }
+
+    private fun getCameraPose() {
+        frame?.let {
+            val cameraPose = it.camera.pose
+            Log.i(TAG,
+                    "CameraPoseX: ${cameraPose.tx()}, " +
+                    "CameraPoseY: ${cameraPose.ty()}, " +
+                    "CameraPoseZ: ${cameraPose.tz()}, " +
+                    "Rotation: ${cameraPose.qx()} - ${cameraPose.qy()} - ${cameraPose.qz()} - ${cameraPose.qw()}")
+
+            val cameraOrientedPose = it.camera.displayOrientedPose
+            Log.i(TAG,
+                    "CameraOrientedPoseX: ${cameraOrientedPose.tx()}, " +
+                            "CameraOrientedPoseY: ${cameraOrientedPose.ty()}, " +
+                            "CameraOrientedPoseZ: ${cameraOrientedPose.tz()}, " +
+                            "Rotation: ${cameraOrientedPose.qx()} - ${cameraOrientedPose.qy()} - ${cameraOrientedPose.qz()} - ${cameraOrientedPose.qw()}")
+        }
+    }
+
+    private fun getPointCloudPoints() {
+        frame?.let {
+            it.acquirePointCloud()?.use { pointCloud ->
+                val floatBuffer = pointCloud.points
+                try {
+                    while (floatBuffer.hasRemaining()) {
+                        val x: Float = floatBuffer.get()
+                        val y: Float = floatBuffer.get()
+                        val z: Float = floatBuffer.get()
+                        val c: Float = floatBuffer.get()
+                        Log.i(TAG, "X: $x, Y: $y, Z: $z, Confidence: $c ")
+                    }
+                } catch (e: Exception) {
+                    Log.i(TAG, "Exception: $e")
                 }
             }
         }

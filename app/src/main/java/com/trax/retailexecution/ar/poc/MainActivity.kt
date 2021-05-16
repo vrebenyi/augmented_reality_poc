@@ -443,9 +443,11 @@ class MainActivity : AppCompatActivity(),
             it.lightEstimate.getColorCorrection(colorCorrectionRgba, 0)
             it.acquirePointCloud()?.use { it ->
                 pointCloudRenderer.update(it)
+                // Comment out to hide the pointcloud / don't draw it.
                 pointCloudRenderer.draw(viewmtx, projmtx)
             }
 
+            // Comment out to hide the plane / don't draw it.
             planeRenderer.drawPlanes(sharedSession!!.getAllTrackables(Plane::class.java), camera.displayOrientedPose, projmtx)
 
             val scaleFactor = 1.0f
@@ -656,6 +658,8 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
+    // region Get 3D data.
+
     private fun getCameraPose() {
         frame?.let {
             val cameraPose = it.camera.pose
@@ -783,4 +787,6 @@ class MainActivity : AppCompatActivity(),
             }
         }
     }
+
+    // endregion
 }

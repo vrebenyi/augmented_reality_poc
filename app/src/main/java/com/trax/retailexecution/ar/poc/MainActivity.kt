@@ -674,10 +674,10 @@ class MainActivity : AppCompatActivity(),
 
 
             // For checking the result:
-            // Puts and object in front of the camera (center of the screen) 1m away
+            // Puts and object in front of the camera (center of the screen)
             // The extractTranslation() results that the anchor is oriented based on the device orientation instead of the camera orientation.
             if (it.camera.trackingState == TrackingState.TRACKING) {
-                var newAnchor = sharedSession?.createAnchor(cameraPose.compose(Pose.makeTranslation(0f, 0f, -1f)).extractTranslation())
+                var newAnchor = sharedSession?.createAnchor(cameraPose.extractTranslation())
                 newAnchor?.let { anchor ->
                     anchors.add(ColoredAnchor(anchor, floatArrayOf(209.0f, 91.0f, 23.0f, 255.0f)))
                 }

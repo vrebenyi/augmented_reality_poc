@@ -24,10 +24,12 @@ import android.util.Size
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
+import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.getSystemService
 import com.google.ar.core.*
 import com.google.ar.core.ArCoreApk.Availability
 import com.google.ar.core.ArCoreApk.InstallStatus
@@ -43,6 +45,7 @@ import com.trax.retailexecution.ar.poc.renderers.PointCloudRenderer
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.lang.Math.abs
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.*
@@ -74,14 +77,10 @@ class MainActivity : AppCompatActivity(),
     private var captureSessionChangesPossible = true
     private var isGlAttached = false
 
-    private val backgroundRenderer =
-        BackgroundRenderer()
-    private val pointCloudRenderer =
-        PointCloudRenderer()
-    private val planeRenderer =
-        PlaneRenderer()
-    private val virtualObject =
-        ObjectRenderer()
+    private val backgroundRenderer = BackgroundRenderer()
+    private val pointCloudRenderer = PointCloudRenderer()
+    private val planeRenderer = PlaneRenderer()
+    private val virtualObject = ObjectRenderer()
 
     private val anchors: ArrayList<ColoredAnchor> = ArrayList()
     private class ColoredAnchor(val anchor: Anchor, val color: FloatArray)
@@ -181,10 +180,8 @@ class MainActivity : AppCompatActivity(),
         surfaceView?.setRenderer(this)
         surfaceView?.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
 
-        displayRotationHelper =
-            DisplayRotationHelper(this)
-        trackingStateHelper =
-            TrackingStateHelper(this)
+        displayRotationHelper = DisplayRotationHelper(this)
+        trackingStateHelper = TrackingStateHelper(this)
         tapHelper = TapHelper(this)
         surfaceView?.setOnTouchListener(tapHelper)
 
@@ -305,15 +302,16 @@ class MainActivity : AppCompatActivity(),
         sharedCamera = sharedSession?.sharedCamera
         cameraId = sharedSession?.cameraConfig?.cameraId
 
-        val desiredCpuImageSize: Size? = sharedSession?.cameraConfig?.textureSize
-        cpuImageReader = ImageReader.newInstance(desiredCpuImageSize!!.width, desiredCpuImageSize.height, ImageFormat.YUV_420_888, 2)
-        cpuImageReader?.setOnImageAvailableListener(this, backgroundHandler)
-        sharedCamera?.setAppSurfaces(this.cameraId, listOf(cpuImageReader?.surface))
-
         try {
+            cameraManager = this.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+
+            val imageCaptureSize = getCameraCaptureSize()
+            cpuImageReader = ImageReader.newInstance(imageCaptureSize.width, imageCaptureSize.height, ImageFormat.YUV_420_888, 2)
+            cpuImageReader?.setOnImageAvailableListener(this, backgroundHandler)
+            sharedCamera?.setAppSurfaces(cameraId, listOf(cpuImageReader?.surface))
+
             val wrappedCallback: CameraDevice.StateCallback = sharedCamera!!.createARDeviceStateCallback(cameraDeviceCallback, backgroundHandler)
 
-            cameraManager = this.getSystemService(Context.CAMERA_SERVICE) as CameraManager
             captureSessionChangesPossible = false
             cameraManager!!.openCamera(cameraId ?: "", wrappedCallback, backgroundHandler)
         } catch (e: SecurityException) { }
@@ -789,4 +787,79 @@ class MainActivity : AppCompatActivity(),
     }
 
     // endregion
+
+    private fun getCameraCaptureSize(): Size {
+        fun Size.getResolution(): Int {
+            return width * height
+        }
+
+        fun Size.getAspectRatio(): Float {
+            return if (width == 0 || height == 0) 0f
+            else height.toFloat() / width.toFloat()
+        }
+
+        val cameraCharacteristics = cameraManager!!.getCameraCharacteristics(cameraId!!)
+        val configurationMap = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!
+        val outputSizes = configurationMap.getOutputSizes(ImageFormat.YUV_420_888).toMutableList()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            configurationMap.getHighResolutionOutputSizes(ImageFormat.YUV_420_888)?.let {
+                outputSizes.addAll(it)
+            }
+        }
+
+        var shouldFlip = false
+        for (outputSize in outputSizes) {
+            if (outputSize.width > outputSize.height) {
+                shouldFlip = true
+            }
+        }
+        val availableSizes = if (shouldFlip) {
+            var myList = mutableListOf<Size>()
+            for (outputSize in outputSizes) {
+                myList.add(Size(outputSize.height, outputSize.width))
+            }
+            myList
+        } else {
+            outputSizes
+        }
+
+        val screenSizePoint = android.graphics.Point()
+        getSystemService<WindowManager>()!!.defaultDisplay.getSize(screenSizePoint)
+        val screenSize = Size(screenSizePoint.x, screenSizePoint.y)
+
+        var selectedSize = Size(0, 0)
+        availableSizes.filter { it.getResolution() > PREFERRED_RESOLUZION }
+            .forEach {
+                if (it.getAspectRatio() <= ASPECT_RATIO_LIMIT) {
+                    val currentAspectRatioDelta = abs(screenSize.getAspectRatio() - it.getAspectRatio())
+                    val selectedAspectRatioDelta = abs(screenSize.getAspectRatio() - selectedSize.getAspectRatio())
+
+                    // if the current aspect ratio is closer to the screen's aspect ratio
+                    if (currentAspectRatioDelta < selectedAspectRatioDelta) {
+                        selectedSize = it
+
+                        // if the current aspect ratio is identical to the selected one
+                    } else if (currentAspectRatioDelta == selectedAspectRatioDelta) {
+                        val currentResolutionDelta = abs(PREFERRED_RESOLUZION - it.getResolution())
+                        val selectedResolutionDelta = abs(PREFERRED_RESOLUZION - selectedSize.getResolution())
+
+                        if (currentResolutionDelta < selectedResolutionDelta) {
+                            selectedSize = it
+                        }
+                    }
+                }
+            }
+
+        if (selectedSize.getResolution() == 0) {
+            selectedSize = availableSizes.maxBy { it.getResolution() } ?: selectedSize
+        }
+
+        return selectedSize
+    }
+
+    companion object {
+        private const val ASPECT_RATIO_LIMIT = 16F/9F
+        private const val PREFERRED_RESOLUZION = 8 * 1000 * 1000
+    }
 }

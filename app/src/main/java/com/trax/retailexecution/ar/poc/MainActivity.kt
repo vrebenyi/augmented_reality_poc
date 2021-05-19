@@ -296,6 +296,7 @@ class MainActivity : AppCompatActivity(),
 
             val config: Config = sharedSession!!.config
             config.focusMode = Config.FocusMode.AUTO
+            config.planeFindingMode = Config.PlaneFindingMode.VERTICAL
             sharedSession?.configure(config)
         }
 
